@@ -1,13 +1,13 @@
-name = "winds/mint-test"
+name = "winds/nft-position-contract"
 version = "0.0.0"
 compiler = "v1.1.11"
 plutus = "v3"
 license = "Apache-2.0"
-description = "Aiken contracts for project 'winds/mint-test'"
+description = "Aiken contracts for project 'winds/nft-position-contract'"
 
 [repository]
 user = "winds"
-project = "mint-test"
+project = "nft-position-contract"
 platform = "github"
 
 [[dependencies]]
