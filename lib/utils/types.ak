@@ -7,7 +7,7 @@ pub const reference_prefix = #"000643b0"
 pub const user_nft_prefix = #"000de140"
 
 //Image of the nft
-pub const nft_image = @"ipfs://something"
+pub const nft_image = @"ipfs://QmRhTTbUrPYEw3mJGGhQqQST9k86v1DPBiTTWJGKDJsVFw"
 
 //Prefix of the nft asset name
 pub const nft_prefix = @"Testing_"

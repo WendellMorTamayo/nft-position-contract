@@ -16,6 +16,7 @@ use utils/types.{
 
 test deposit_mint_test() {
   let validator_hash = #"0000"
+  let sample_hash = #"001100"
 
   let input1 =
     Input {
@@ -25,15 +26,10 @@ test deposit_mint_test() {
       },
       output: Output(
         Address {
-          payment_credential: Script(validator_hash),
+          payment_credential: Script(sample_hash),
           stake_credential: None,
         },
-        from_lovelace(100_000_000)
-          |> add(
-              validator_hash,
-              reference_prefix |> bytearray.concat(#"1111"),
-              1,
-            ),
+        from_lovelace(100_000_000),
         InlineDatum(
           CollateralDetails {
             policy_id: #"0000",
@@ -53,15 +49,10 @@ test deposit_mint_test() {
       },
       output: Output(
         Address {
-          payment_credential: Script(validator_hash),
+          payment_credential: Script(sample_hash),
           stake_credential: None,
         },
-        from_lovelace(100_000_000)
-          |> add(
-              validator_hash,
-              reference_prefix |> bytearray.concat(#"2111"),
-              1,
-            ),
+        from_lovelace(100_000_000),
         InlineDatum(
           CollateralDetails {
             policy_id: #"0000",
@@ -81,15 +72,10 @@ test deposit_mint_test() {
       },
       output: Output(
         Address {
-          payment_credential: Script(validator_hash),
+          payment_credential: Script(sample_hash),
           stake_credential: None,
         },
-        from_lovelace(100_000_000)
-          |> add(
-              validator_hash,
-              reference_prefix |> bytearray.concat(#"3111"),
-              1,
-            ),
+        from_lovelace(100_000_000),
         InlineDatum(
           CollateralDetails {
             policy_id: #"0000",
@@ -235,44 +221,13 @@ test deposit_mint_test() {
                   get_nft_position_ident(ident, 1)
                     |> ident_to_asset_name(ReferenceNft),
                   1,
-                )
-              |> add(
-                  validator_hash,
-                  reference_prefix |> bytearray.concat(#"1111"),
-                  -1,
-                )
-              |> add(
-                  validator_hash,
-                  user_nft_prefix |> bytearray.concat(#"1111"),
-                  -1,
-                )
-              |> add(
-                  validator_hash,
-                  reference_prefix |> bytearray.concat(#"2111"),
-                  -1,
-                )
-              |> add(
-                  validator_hash,
-                  user_nft_prefix |> bytearray.concat(#"2111"),
-                  -1,
-                )
-              |> add(
-                  validator_hash,
-                  reference_prefix |> bytearray.concat(#"3111"),
-                  -1,
-                )
-              |> add(
-                  validator_hash,
-                  user_nft_prefix |> bytearray.concat(#"3111"),
-                  -1,
                 ),
           }
         }
-
   mint_and_burn(validator_hash, tx)?
 }
 
-test cancel_test() {
+test burn_test() {
   let validator_hash = #"0000"
   let owner_hash = #"0011"
 

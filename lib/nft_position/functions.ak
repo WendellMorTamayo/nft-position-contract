@@ -22,15 +22,11 @@ pub fn claim(validator_hash: ByteArray, tx: Transaction) {
   //     script_inputs |> list.map(fn(input) { input.output }),
   //   )
 
-  // // Group Outputs by Vesting Parameters
-  // let outputs_by_params = group_outputs_by_nft_datum(script_outputs)
-
   mint_and_burn(validator_hash, tx)?
 }
 
 pub fn mint_and_burn(param: ByteArray, tx: Transaction) {
-  let inputs = tx.inputs
-  let outputs = tx.outputs
+  let Transaction { inputs, outputs, .. } = tx
   let tx_identifier = get_unique_ident_from_inputs(inputs)
 
   // We only evaluate inputs coming from our validator
@@ -118,7 +114,7 @@ pub fn mint_and_burn(param: ByteArray, tx: Transaction) {
   let flattened_mint = tx.mint |> flatten()
 
   // Check if mint count is accurate
-  let is_positions_minted = 
+  let is_positions_minted =
     list.length(flattened_mint) - list.length(reference_nfts_to_burn) * 2 == nft_position_outputs_count * 2
 
   let reference_prefix_length = reference_prefix |> bytearray.length()
