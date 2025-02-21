@@ -1,11 +1,13 @@
 use aiken/cbor.{serialise}
 use aiken/collection/dict.{Dict}
 use aiken/collection/list
-use aiken/crypto.{VerificationKeyHash, blake2b_256}
+use aiken/crypto.{blake2b_256}
 use aiken/primitive/bytearray
-use cardano/address.{Address, PaymentCredential, Script, VerificationKey}
+use cardano/address.{Address, PaymentCredential, Script}
 use cardano/assets.{AssetName, PolicyId, quantity_of}
-use cardano/transaction.{Datum, InlineDatum, Input, Output, OutputReference, Transaction}
+use cardano/transaction.{
+  Datum, InlineDatum, Input, Output, OutputReference, Transaction,
+}
 use utils/types.{
   NftIdentifier, NftPosition, ReferenceNft, UserNft, nft_image, nft_prefix,
   reference_prefix, user_nft_prefix,
@@ -66,17 +68,6 @@ pub fn outputs_contains_nft(
           ) == 1
         },
       )
-}
-
-pub fn tx_signed_by_address(tx: Transaction, owner: Address) -> Bool {
-  when owner.payment_credential is {
-    VerificationKey(keyhash) -> tx_signed_by_key(tx, keyhash)
-    Script(_) as payment_credential -> signed_with_input(tx, payment_credential)
-  }
-}
-
-pub fn tx_signed_by_key(tx: Transaction, keyhash: VerificationKeyHash) -> Bool {
-  list.has(tx.extra_signatories, keyhash)
 }
 
 pub fn signed_with_input(

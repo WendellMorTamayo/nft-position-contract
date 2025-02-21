@@ -28,3 +28,7 @@ pub type CollateralDetails {
   asset_name: AssetName,
   collateral_amount: Int,
 }
+
+pub type WithdrawRedeemer {
+  indexes: List<(Int, Int)>,
+}

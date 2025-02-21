@@ -9,24 +9,23 @@ use utils/functions.{
 use utils/types.{ReferenceNft, reference_prefix, user_nft_prefix}
 
 pub fn claim(validator_hash: ByteArray, tx: Transaction) {
-  // Get all inputs being unlocked from the script
-  // let script_inputs = find_script_inputs(tx.inputs, validator_hash)
+  // let Transaction { inputs, outputs, .. } = tx
+  // // Get all inputs being unlocked from the script
+  // let script_inputs = inputs |> find_script_inputs(validator_hash)
 
   // let script_outputs =
-  //   tx.outputs
-  //     |> transaction.find_script_outputs(validator_hash)
+  //   outputs |> transaction.find_script_outputs(validator_hash)
 
   // // Group Inputs by Vesting Parameters
   // let resolved_inputs_by_params =
   //   group_outputs_by_nft_datum(
   //     script_inputs |> list.map(fn(input) { input.output }),
   //   )
-
   mint_and_burn(validator_hash, tx)?
 }
 
 pub fn mint_and_burn(param: ByteArray, tx: Transaction) {
-  let Transaction { inputs, outputs, .. } = tx
+  let Transaction { inputs, outputs, mint, .. } = tx
   let tx_identifier = get_unique_ident_from_inputs(inputs)
 
   // We only evaluate inputs coming from our validator
@@ -59,7 +58,6 @@ pub fn mint_and_burn(param: ByteArray, tx: Transaction) {
     (list.length(resolved_script_inputs) == list.length(reference_nfts_to_burn))?
 
   // Find all outputs sent to the script
-  // validator_hash has been passed as policy_id here
   let script_outputs =
     outputs
       |> transaction.find_script_outputs(param)
@@ -111,7 +109,7 @@ pub fn mint_and_burn(param: ByteArray, tx: Transaction) {
           },
         )
 
-  let flattened_mint = tx.mint |> flatten()
+  let flattened_mint = mint |> flatten()
 
   // Check if mint count is accurate
   let is_positions_minted =
