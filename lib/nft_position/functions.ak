@@ -1,27 +1,98 @@
+use aiken/cbor
 use aiken/collection/list
+use aiken/crypto.{Blake2b_256, Hash}
 use aiken/primitive/bytearray
 use cardano/assets.{flatten, flatten_with, quantity_of}
-use cardano/transaction.{Transaction}
+use cardano/transaction.{InlineDatum, OutputReference, Transaction}
 use utils/functions.{
-  get_nft_position_ident, get_unique_ident_from_inputs, ident_to_asset_name,
-  outputs_contains_nft, try_extract_nft_position,
+  get_collateral_value, get_nft_position_ident, get_transaction_details,
+  get_unique_ident_from_inputs, ident_to_asset_name, outputs_contains_nft,
+  try_extract_nft_position,
 }
-use utils/types.{ReferenceNft, reference_prefix, user_nft_prefix}
+use utils/types.{
+  NftPosition, OutputIndexes, ReferenceNft, TransactionDetails, reference_prefix,
+  user_nft_prefix,
+} as util_types
 
-pub fn claim(validator_hash: ByteArray, tx: Transaction) {
-  // let Transaction { inputs, outputs, .. } = tx
-  // // Get all inputs being unlocked from the script
-  // let script_inputs = inputs |> find_script_inputs(validator_hash)
+pub fn claim(
+  validator_hash: ByteArray,
+  input_index: Int,
+  output_indexes: OutputIndexes,
+  tx: Transaction,
+) {
+  let tx_details =
+    get_transaction_details(
+      input_index,
+      output_indexes.self_output_index,
+      output_indexes.return_output_index,
+      tx,
+    )
 
-  // let script_outputs =
-  //   outputs |> transaction.find_script_outputs(validator_hash)
+  let TransactionDetails { self_input, return_output, .. } = tx_details
 
-  // // Group Inputs by Vesting Parameters
-  // let resolved_inputs_by_params =
-  //   group_outputs_by_nft_datum(
-  //     script_inputs |> list.map(fn(input) { input.output }),
-  //   )
-  mint_and_burn(validator_hash, tx)?
+  expect InlineDatum(input_data) = self_input.output.datum
+  expect nft_position: NftPosition = input_data
+  expect Some(return_output) = return_output
+
+  let collateral_amount =
+    get_collateral_value(
+      nft_position.extra.policy_id,
+      nft_position.extra.asset_name,
+      return_output.value,
+    )
+
+  let is_collateral_equal =
+    collateral_amount == nft_position.extra.collateral_amount
+
+  let datum_tag =
+    self_input.output_reference
+      |> cbor.serialise()
+      |> crypto.blake2b_256()
+
+  expect InlineDatum(return_datum) = return_output.datum
+  expect return_datum: Hash<Blake2b_256, OutputReference> = return_datum
+  let is_datum_tag_correct = return_datum == datum_tag
+
+  let is_mint_valid = mint_and_burn(validator_hash, tx)
+
+  and {
+    is_mint_valid?,
+    is_collateral_equal?,
+    is_datum_tag_correct?,
+  }
+}
+
+pub fn cancel(
+  validator_hash: ByteArray,
+  input_index: Int,
+  output_indexes: OutputIndexes,
+  tx: Transaction,
+) {
+  let tx_details =
+    get_transaction_details(
+      input_index,
+      output_indexes.self_output_index,
+      output_indexes.return_output_index,
+      tx,
+    )
+
+  let TransactionDetails { self_input, self_output, .. } = tx_details
+
+  expect InlineDatum(input_data) = self_input.output.datum
+  expect input_nft_position: NftPosition = input_data
+
+  expect InlineDatum(output_data) = self_output.datum
+  expect output_nft_position: NftPosition = output_data
+
+  let is_nft_valid = and {
+      input_nft_position.extra.policy_id == output_nft_position.extra.policy_id,
+      input_nft_position.extra.asset_name == output_nft_position.extra.asset_name,
+    }
+  let is_mint_valid = mint_and_burn(validator_hash, tx)
+  and {
+    is_nft_valid?,
+    is_mint_valid?,
+  }
 }
 
 pub fn mint_and_burn(param: ByteArray, tx: Transaction) {

@@ -1,4 +1,5 @@
 use cardano/assets.{AssetName, PolicyId}
+use cardano/transaction.{Input, Output}
 
 //Prefix of the reference nft asset id according to CIP-68
 pub const reference_prefix = #"000643b0"
@@ -29,6 +30,32 @@ pub type CollateralDetails {
   collateral_amount: Int,
 }
 
-pub type WithdrawRedeemer {
-  indexes: List<(Int, Int)>,
+pub type ActionType {
+  ClaimAction
+  CancelAction
+}
+
+// input index, output indexes
+pub type Action {
+  input_index: Int,
+  output_indexes: OutputIndexes,
+  action_type: ActionType,
+}
+
+// The redeemer for the withdraw purpose
+pub type WithdrawRedeemer =
+  List<Action>
+
+// Output indexes in the transaction:
+// - A required main output index.
+// - An optional fee output index.
+pub type OutputIndexes {
+  self_output_index: Int,
+  return_output_index: Option<Int>,
+}
+
+pub type TransactionDetails {
+  self_input: Input,
+  self_output: Output,
+  return_output: Option<Output>,
 }

@@ -4,13 +4,13 @@ use aiken/collection/list
 use aiken/crypto.{blake2b_256}
 use aiken/primitive/bytearray
 use cardano/address.{Address, PaymentCredential, Script}
-use cardano/assets.{AssetName, PolicyId, quantity_of}
+use cardano/assets.{AssetName, PolicyId, Value, quantity_of, tokens}
 use cardano/transaction.{
   Datum, InlineDatum, Input, Output, OutputReference, Transaction,
 }
 use utils/types.{
-  NftIdentifier, NftPosition, ReferenceNft, UserNft, nft_image, nft_prefix,
-  reference_prefix, user_nft_prefix,
+  NftIdentifier, NftPosition, ReferenceNft, TransactionDetails, UserNft,
+  nft_image, nft_prefix, reference_prefix, user_nft_prefix,
 }
 
 pub fn get_validator_hash(utxo: OutputReference, tx: Transaction) {
@@ -153,4 +153,38 @@ pub fn try_extract_nft_position(on_chain_datum: Datum) -> Option<NftPosition> {
   expect image_value == bytearray.from_string(nft_image)
 
   Some(cip68_position)
+}
+
+pub fn get_collateral_value(
+  policy_id: PolicyId,
+  asset_name: AssetName,
+  val: Value,
+) -> Int {
+  expect Some(token) =
+    tokens(val, policy_id)
+      |> dict.to_pairs()
+      |> list.filter(fn(Pair(name, _amount)) { asset_name == name })
+      |> list.head()
+  token.2nd
+}
+
+pub fn get_transaction_details(
+  input_index: Int,
+  output_index: Int,
+  return_output_index: Option<Int>,
+  tx: Transaction,
+) {
+  expect Some(self_input) =
+    tx.inputs
+      |> list.at(input_index)
+  expect Some(self_output) =
+    tx.outputs
+      |> list.at(output_index)
+  let return_output =
+    when return_output_index is {
+      Some(index) -> tx.outputs |> list.at(index)
+      None -> None
+    }
+
+  TransactionDetails { self_input, self_output, return_output }
 }
