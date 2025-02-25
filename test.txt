@@ -1,0 +1,9 @@
+cardano-cli query utxo \
+--address addr_test1wzzxj5qt34v2khqfqhgdnsuwfrzw7k38ua4h4xh40w4slwsanhsds \
+--socket-path $(cat preview.socket) \
+--testnet-magic 2
+
+cardano-cli query utxo \
+--address addr_test1qr9ekckky98fgvdd5vre2vynn87z79vjke6pv9qwlalu5wmq7kjv27ex9e5yhqu9rfrs2yfmx49ene5k2jrwtvtz6yyqkha3p7 \
+--socket-path $(cat preview.socket) \
+--testnet-magic 2

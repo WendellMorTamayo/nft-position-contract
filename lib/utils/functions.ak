@@ -9,7 +9,7 @@ use cardano/transaction.{
   Datum, InlineDatum, Input, Output, OutputReference, Transaction,
 }
 use utils/types.{
-  NftIdentifier, NftPosition, ReferenceNft, TransactionDetails, UserNft,
+  Cip68Metadata, NftIdentifier, ReferenceNft, TransactionDetails, UserNft,
   nft_image, nft_prefix, reference_prefix, user_nft_prefix,
 }
 
@@ -96,7 +96,7 @@ pub fn find_script_inputs(
 
 pub fn group_outputs_by_nft_datum(
   validator_outputs: List<Output>,
-) -> Dict<ByteArray, Pair<NftPosition, List<Output>>> {
+) -> Dict<ByteArray, Pair<Cip68Metadata, List<Output>>> {
   validator_outputs
     |> list.foldl(
         dict.empty,
@@ -117,9 +117,9 @@ pub fn group_outputs_by_nft_datum(
       )
 }
 
-pub fn try_extract_nft_position(on_chain_datum: Datum) -> Option<NftPosition> {
+pub fn try_extract_nft_position(on_chain_datum: Datum) -> Option<Cip68Metadata> {
   expect InlineDatum(inline_datum) = on_chain_datum
-  expect cip68_position: NftPosition = inline_datum
+  expect cip68_position: Cip68Metadata = inline_datum
 
   expect Some(name) =
     cip68_position.metadata

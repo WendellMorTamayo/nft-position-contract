@@ -18,7 +18,7 @@ pub type NftIdentifier {
   UserNft
 }
 
-pub type NftPosition {
+pub type Cip68Metadata {
   metadata: List<(ByteArray, ByteArray)>,
   version: Int,
   extra: CollateralDetails,
@@ -33,6 +33,8 @@ pub type CollateralDetails {
 pub type ActionType {
   ClaimAction
   CancelAction
+  MintAction
+  BurnAction
 }
 
 // input index, output indexes

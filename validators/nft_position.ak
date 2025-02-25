@@ -1,12 +1,13 @@
 use aiken/collection/list
 use aiken/collection/pairs
-use cardano/address.{Credential, Script, VerificationKey}
+use cardano/address.{Credential, Script}
 use cardano/assets.{PolicyId}
 use cardano/transaction.{OutputReference, Transaction}
-use nft_position/functions.{cancel,
-  claim, mint_and_burn} as nft_position_functions
+use nft_position/functions.{cancel, claim, lock_asset} as nft_position_functions
 use utils/functions.{get_validator_hash}
-use utils/types.{Action, CancelAction, ClaimAction, WithdrawRedeemer}
+use utils/types.{
+  Action, BurnAction, CancelAction, ClaimAction, MintAction, WithdrawRedeemer,
+}
 
 validator nft_position {
   spend(
@@ -20,27 +21,22 @@ validator nft_position {
       |> pairs.has_key(Script(self_hash))
   }
 
-  withdraw(redeemer: WithdrawRedeemer, account: Credential, self: Transaction) {
-    let self_hash =
-      when account is {
-        VerificationKey(_) -> None
-        Script(v_hash) -> Some(v_hash)
-      }
-    expect Some(self_hash) = self_hash
+  withdraw(redeemer: WithdrawRedeemer, _account: Credential, self: Transaction) {
     redeemer
       |> list.all(
           fn(Action { input_index, output_indexes, action_type }) {
             when action_type is {
-              ClaimAction -> claim(self_hash, input_index, output_indexes, self)
-              CancelAction ->
-                cancel(self_hash, input_index, output_indexes, self)
+              ClaimAction -> claim(input_index, output_indexes, self)
+              CancelAction -> cancel(input_index, output_indexes, self)
+              MintAction -> lock_asset(input_index, output_indexes, self)
+              BurnAction -> True
             }
           },
         )
   }
 
-  mint(_redeemer: Data, policy_id: PolicyId, self: Transaction) {
-    mint_and_burn(policy_id, self)
+  mint(_redeemer: Data, _policy_id: PolicyId, _self: Transaction) {
+    True
   }
 
   else(_) {
