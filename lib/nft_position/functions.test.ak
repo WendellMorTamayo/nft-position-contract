@@ -1,5 +1,4 @@
 use aiken/primitive/bytearray
-use aiken/primitive/string
 use cardano/address.{Address, Script, VerificationKey}
 use cardano/assets.{add, from_lovelace, zero}
 use cardano/transaction.{
@@ -8,7 +7,7 @@ use cardano/transaction.{
 use nft_position/functions.{cancel, mint_token, unique_token_name}
 use utils/functions.{get_transaction_details} as util_functions
 use utils/types.{
-  Cip68Metadata, CollateralDetails, OutputIndexes, nft_image, nft_prefix,
+  CIP68Metadata, CollateralDetails, OutputIndexes, nft_image, nft_prefix,
   reference_prefix, user_nft_prefix,
 }
 
@@ -542,29 +541,10 @@ test cancel_test() {
   let validator_hash =
     #"8469500b8d58ab5c0905d0d9c38e48c4ef5a27e76b7a9af57bab0fba"
 
-  let inline_datum =
-    InlineDatum(
-      Cip68Metadata {
-        metadata: [
-          (
-            bytearray.from_string(@"name"),
-            bytearray.from_string(string.concat(nft_prefix, @"Testers")),
-          ),
-          (bytearray.from_string(@"image"), bytearray.from_string(nft_image)),
-        ],
-        version: 1,
-        extra: CollateralDetails {
-          policy_id: #"0000",
-          asset_name: #"0011",
-          collateral_amount: 4_000_000,
-        },
-      },
-    )
-
   let input =
     Input {
       output_reference: OutputReference {
-        transaction_id: #"1234",
+        transaction_id: #"f5eaa68a929e89d0b0a0d2cfb3c204dfde5d72f9b84c364d7612d662c4a29377",
         output_index: 0,
       },
       output: Output(
@@ -579,7 +559,7 @@ test cancel_test() {
                 |> bytearray.concat("Testers"),
               1,
             ),
-        inline_datum,
+        NoDatum,
         None,
       ),
     }
@@ -592,13 +572,13 @@ test cancel_test() {
       },
       from_lovelace(100_000_000),
       InlineDatum(
-        Cip68Metadata {
+        CIP68Metadata {
           metadata: [
-            (
-              bytearray.from_string(@"name"),
-              bytearray.from_string(string.concat(nft_prefix, @"Testers")),
+            Pair(#"6e616d65", #"5374616b65204e465420434e4354202d20323431303031"),
+            Pair(
+              #"6c6f636b65645f617373657473",
+              #"5b2863323736303066336166663364393430343334363461333337383634323962373865366162396466356531643233623737346163623334632c34333465343335342c32333831383530295d",
             ),
-            (bytearray.from_string(@"image"), bytearray.from_string(nft_image)),
           ],
           version: 1,
           extra: CollateralDetails {
@@ -656,7 +636,7 @@ test cancel_test() {
 
   cancel(
     0,
-    OutputIndexes { self_output_index: 0, return_output_index: Some(0) },
+    OutputIndexes { self_output_index: 0, return_output_index: None },
     tx,
   )
 }
@@ -665,29 +645,11 @@ test mint_test() {
   let validator_hash = #"0000"
   let sample_hash = #"001100"
 
-  let inline_datum =
-    InlineDatum(
-      Cip68Metadata {
-        metadata: [
-          (
-            bytearray.from_string(@"name"),
-            bytearray.from_string(string.concat(nft_prefix, @"test1")),
-          ),
-          (bytearray.from_string(@"image"), bytearray.from_string(nft_image)),
-        ],
-        version: 1,
-        extra: CollateralDetails {
-          policy_id: #"0000",
-          asset_name: #"0011",
-          collateral_amount: 2_000_000,
-        },
-      },
-    )
   let input1 =
     Input {
       output_reference: OutputReference {
-        transaction_id: #"2c8a537791851569cbc30a54e6b615dcd8a2ccb40fe8840b864110c2827e7e7e",
-        output_index: 1,
+        transaction_id: #"acb22505077675d16b393cad45d2ac9cd3dd3fcf99845f6335ff9f12b83721d3",
+        output_index: 2,
       },
       output: Output(
         Address {
@@ -695,7 +657,7 @@ test mint_test() {
           stake_credential: None,
         },
         from_lovelace(5_000_000),
-        inline_datum,
+        NoDatum,
         None,
       ),
     }
@@ -711,19 +673,23 @@ test mint_test() {
             validator_hash,
             unique_token_name(
               input1.output_reference.transaction_id,
-              1,
+              input1.output_reference.output_index,
               reference_prefix,
             ),
             1,
           ),
       InlineDatum(
-        Cip68Metadata {
+        CIP68Metadata {
           metadata: [
-            (
+            Pair(
               bytearray.from_string(@"name"),
-              bytearray.from_string(string.concat(nft_prefix, @"test1")),
+              bytearray.from_string(nft_prefix)
+                |> bytearray.concat(bytearray.from_string(@"NftPosition1")),
             ),
-            (bytearray.from_string(@"image"), bytearray.from_string(nft_image)),
+            Pair(
+              bytearray.from_string(@"image"),
+              bytearray.from_string(nft_image),
+            ),
           ],
           version: 1,
           extra: CollateralDetails {
@@ -742,16 +708,7 @@ test mint_test() {
         payment_credential: VerificationKey(sample_hash),
         stake_credential: None,
       },
-      from_lovelace(8_000_000)
-        |> add(
-            validator_hash,
-            unique_token_name(
-              input1.output_reference.transaction_id,
-              1,
-              user_nft_prefix,
-            ),
-            1,
-          ),
+      from_lovelace(8_000_000),
       NoDatum,
       None,
     )
@@ -768,7 +725,7 @@ test mint_test() {
                   validator_hash,
                   unique_token_name(
                     input1.output_reference.transaction_id,
-                    1,
+                    input1.output_reference.output_index,
                     reference_prefix,
                   ),
                   1,
@@ -777,7 +734,7 @@ test mint_test() {
                   validator_hash,
                   unique_token_name(
                     input1.output_reference.transaction_id,
-                    1,
+                    input1.output_reference.output_index,
                     user_nft_prefix,
                   ),
                   1,
@@ -785,6 +742,16 @@ test mint_test() {
           }
         }
 
+  trace unique_token_name(
+    input1.output_reference.transaction_id,
+    input1.output_reference.output_index,
+    reference_prefix,
+  )
+  trace unique_token_name(
+    input1.output_reference.transaction_id,
+    input1.output_reference.output_index,
+    user_nft_prefix,
+  )
   let tx_details = get_transaction_details(0, 0, Some(1), tx)
   mint_token(validator_hash, tx_details, tx)?
 }

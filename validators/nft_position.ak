@@ -3,7 +3,8 @@ use aiken/collection/pairs
 use cardano/address.{Credential, Script}
 use cardano/assets.{PolicyId}
 use cardano/transaction.{OutputReference, Transaction}
-use nft_position/functions.{cancel, claim, lock_asset} as nft_position_functions
+use nft_position/functions.{burn_asset,
+  cancel, claim, lock_asset} as nft_position_functions
 use utils/functions.{get_validator_hash}
 use utils/types.{
   Action, BurnAction, CancelAction, ClaimAction, MintAction, WithdrawRedeemer,
@@ -29,7 +30,7 @@ validator nft_position {
               ClaimAction -> claim(input_index, output_indexes, self)
               CancelAction -> cancel(input_index, output_indexes, self)
               MintAction -> lock_asset(input_index, output_indexes, self)
-              BurnAction -> True
+              BurnAction -> burn_asset(input_index, output_indexes, self)
             }
           },
         )

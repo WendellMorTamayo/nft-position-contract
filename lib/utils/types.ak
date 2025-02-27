@@ -8,7 +8,7 @@ pub const reference_prefix = #"000643b0"
 pub const user_nft_prefix = #"000de140"
 
 //Image of the nft
-pub const nft_image = @"ipfs://QmRhTTbUrPYEw3mJGGhQqQST9k86v1DPBiTTWJGKDJsVFw"
+pub const nft_image = @"ipfs://QmX48MTvb863BvBkBSB8BSWoMUBdUAbnT7nQgfuQjadaCa"
 
 //Prefix of the nft asset name
 pub const nft_prefix = @"Testing_"
@@ -18,8 +18,8 @@ pub type NftIdentifier {
   UserNft
 }
 
-pub type Cip68Metadata {
-  metadata: List<(ByteArray, ByteArray)>,
+pub type CIP68Metadata {
+  metadata: Pairs<ByteArray, ByteArray>,
   version: Int,
   extra: CollateralDetails,
 }

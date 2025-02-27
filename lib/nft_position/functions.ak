@@ -1,15 +1,17 @@
 use aiken/cbor
 use aiken/collection/list
-use aiken/crypto.{Blake2b_256, Hash, blake2b_256}
+use aiken/crypto.{Blake2b_256, Hash}
 use aiken/primitive/bytearray
 use cardano/address.{Script}
 use cardano/assets.{AssetName, PolicyId, flatten, flatten_with}
 use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, Transaction, TransactionId,
 }
-use utils/functions.{get_collateral_value, get_transaction_details}
+use utils/functions.{
+  get_collateral_value, get_transaction_details, try_extract_nft_position,
+}
 use utils/types.{
-  Cip68Metadata, OutputIndexes, TransactionDetails, nft_prefix, reference_prefix,
+  CIP68Metadata, OutputIndexes, TransactionDetails, nft_prefix, reference_prefix,
   user_nft_prefix,
 } as util_types
 
@@ -25,7 +27,7 @@ pub fn claim(input_index: Int, output_indexes: OutputIndexes, tx: Transaction) {
   let TransactionDetails { self_input, return_output, .. } = tx_details
 
   expect InlineDatum(input_data) = self_input.output.datum
-  expect nft_position: Cip68Metadata = input_data
+  expect nft_position: CIP68Metadata = input_data
   expect Some(return_output) = return_output
 
   let collateral_amount =
@@ -66,9 +68,9 @@ pub fn cancel(input_index: Int, output_indexes: OutputIndexes, tx: Transaction) 
       tx,
     )
 
-  let TransactionDetails { self_input, .. } = tx_details
+  let TransactionDetails { self_input, self_output, .. } = tx_details
 
-  expect InlineDatum(_) = self_input.output.datum
+  expect InlineDatum(_) = self_output.datum
 
   expect Script(validator_hash) = self_input.output.address.payment_credential
   burn_token(validator_hash, tx_details, tx)
@@ -87,10 +89,29 @@ pub fn lock_asset(
       tx,
     )
 
-  let TransactionDetails { self_input, .. } = tx_details
-  expect InlineDatum(_) = self_input.output.datum
-  expect Script(validator_hash) = self_input.output.address.payment_credential
+  let TransactionDetails { self_output, .. } = tx_details
+  expect Script(validator_hash) = self_output.address.payment_credential
   mint_token(validator_hash, tx_details, tx)?
+}
+
+pub fn burn_asset(
+  input_index: Int,
+  output_indexes: OutputIndexes,
+  tx: Transaction,
+) {
+  let tx_details =
+    get_transaction_details(
+      input_index,
+      output_indexes.self_output_index,
+      output_indexes.return_output_index,
+      tx,
+    )
+
+  let TransactionDetails { self_input, .. } = tx_details
+  expect Script(validator_hash) = self_input.output.address.payment_credential
+  expect InlineDatum(_) = self_input.output.datum
+  // todo check collateral details
+  burn_token(validator_hash, tx_details, tx)?
 }
 
 pub fn mint_token(
@@ -100,28 +121,30 @@ pub fn mint_token(
 ) {
   let TransactionDetails { self_input, self_output, .. } = tx_details
 
+  let is_nft_position_valid = try_extract_nft_position(self_output.datum)
+
   let tx_hash = self_input.output_reference.transaction_id
   let index = self_input.output_reference.output_index
-  let reference_token: AssetName =
+  let reference_token_name: AssetName =
     unique_token_name(tx_hash, index, reference_prefix)
-  let user_token: AssetName = unique_token_name(tx_hash, index, user_nft_prefix)
+  let user_token_name: AssetName =
+    unique_token_name(tx_hash, index, user_nft_prefix)
 
   // check if reference and user tokens are part of the mint of this transaction
   let mint = tx.mint |> flatten()
   let is_token_mint_valid = and {
       mint
         |> list.any(
-            fn(y) { exact_value(y, validator_hash, reference_token, 1)? },
+            fn(y) { exact_value(y, validator_hash, reference_token_name, 1)? },
           ),
       mint
-        |> list.any(fn(y) { exact_value(y, validator_hash, user_token, 1)? }),
+        |> list.any(
+            fn(y) { exact_value(y, validator_hash, user_token_name, 1)? },
+          ),
     }
-  expect Script(validator_hash) = self_input.output.address.payment_credential
-  expect Script(policy_id) = self_output.address.payment_credential
-  let is_ref_token_sent_to_validator = policy_id == validator_hash
   and {
+    is_nft_position_valid?,
     is_token_mint_valid?,
-    is_ref_token_sent_to_validator?,
   }
 }
 
@@ -195,7 +218,7 @@ pub fn unique_token_name(
     prefix
       |> bytearray.concat(trimmed_personal)
       |> bytearray.concat(prepend_index)
-  blake2b_256(prepend_prefix |> bytearray.take(32))
+  prepend_prefix |> bytearray.take(32)
 }
 
 pub fn exact_value(
