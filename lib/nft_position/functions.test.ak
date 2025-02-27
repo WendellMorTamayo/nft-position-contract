@@ -23,7 +23,7 @@ test claim_test() {
       },
       output: Output(
         Address {
-          payment_credential: VerificationKey(owner_hash),
+          payment_credential: Script(validator_hash),
           stake_credential: None,
         },
         from_lovelace(100_000_000)
@@ -33,26 +33,28 @@ test claim_test() {
               1,
             ),
         InlineDatum(
-          CollateralDetails {
-            policy_id: #"0000",
-            asset_name: #"0011",
-            collateral_amount: 2_000_000,
+          CIP68Metadata {
+            metadata: [
+              Pair(
+                #"6e616d65",
+                #"5374616b65204e465420434e4354202d20323431303031",
+              ),
+              Pair(
+                #"6c6f636b65645f617373657473",
+                #"5b2863323736303066336166663364393430343334363461333337383634323962373865366162396466356531643233623737346163623334632c34333465343335342c32333831383530295d",
+              ),
+            ],
+            version: 1,
+            extra: CollateralDetails {
+              policy_id: #"0000",
+              asset_name: #"0011",
+              collateral_amount: 2_000_000,
+            },
           },
         ),
         None,
       ),
     }
-
-  let returned_output =
-    Output(
-      Address {
-        payment_credential: Script(validator_hash),
-        stake_credential: None,
-      },
-      from_asset(#"0000", #"0011", 100_000_000),
-      NoDatum,
-      None,
-    )
 
   let minted_value =
     zero
@@ -98,14 +100,14 @@ test claim_test() {
           Transaction {
             ..tx,
             inputs: [input],
-            outputs: [returned_output, repay_output],
+            outputs: [repay_output],
             mint: minted_value,
           }
         }
 
   claim(
     0,
-    OutputIndexes { self_output_index: 0, return_output_index: Some(1) },
+    OutputIndexes { self_output_index: 0, return_output_index: None },
     tx,
   )
 }
@@ -221,7 +223,7 @@ test mint_test() {
   let input1 =
     Input {
       output_reference: OutputReference {
-        transaction_id: #"cfd34e88b1ac06dd1a7e318d991e4dfc5fb117556c9dc243b45e01488142aef9",
+        transaction_id: #"27cac73f6583edd7e950c02767fdee179b9c980bcb116b4869451944644337ed",
         output_index: 0,
       },
       output: Output(

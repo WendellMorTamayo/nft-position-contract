@@ -9,8 +9,8 @@ use utils/functions.{
   get_collateral_value, get_transaction_details, try_extract_nft_position,
 }
 use utils/types.{
-  CollateralDetails, OutputIndexes, TransactionDetails, nft_prefix,
-  reference_prefix, user_nft_prefix,
+  CIP68Metadata, CollateralDetails, OutputIndexes, TransactionDetails,
+  nft_prefix, reference_prefix, user_nft_prefix,
 } as util_types
 
 pub fn claim(input_index: Int, output_indexes: OutputIndexes, tx: Transaction) {
@@ -22,22 +22,21 @@ pub fn claim(input_index: Int, output_indexes: OutputIndexes, tx: Transaction) {
       tx,
     )
 
-  let TransactionDetails { self_input, self_output, return_output } = tx_details
+  let TransactionDetails { self_input, self_output, .. } = tx_details
 
   expect InlineDatum(input_data) = self_input.output.datum
-  expect collateral_details: CollateralDetails = input_data
-  expect Some(return_output) = return_output
+  expect nft_position: CIP68Metadata = input_data
 
   let collateral_amount =
     get_collateral_value(
-      collateral_details.policy_id,
-      collateral_details.asset_name,
-      return_output.value,
+      nft_position.extra.policy_id,
+      nft_position.extra.asset_name,
+      self_output.value,
     )
 
   let is_collateral_equal =
-    collateral_amount == collateral_details.collateral_amount
-  expect Script(validator_hash) = self_output.address.payment_credential
+    collateral_amount == nft_position.extra.collateral_amount
+  expect Script(validator_hash) = self_input.output.address.payment_credential
   let is_mint_valid = burn_token(validator_hash, tx_details, tx)
 
   and {
