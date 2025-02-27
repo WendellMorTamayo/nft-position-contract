@@ -1,5 +1,5 @@
 cardano-cli query utxo \
---address addr_test1wzzxj5qt34v2khqfqhgdnsuwfrzw7k38ua4h4xh40w4slwsanhsds \
+--address addr_test1wpg67kvkyhpaa3hrpfhmsgtt6tvtaeuzysc9hln5g9wcgacdr55ah \
 --socket-path $(cat preview.socket) \
 --testnet-magic 2
 

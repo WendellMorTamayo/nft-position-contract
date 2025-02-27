@@ -1,6 +1,4 @@
-use aiken/cbor
 use aiken/collection/list
-use aiken/crypto.{Blake2b_256, Hash}
 use aiken/primitive/bytearray
 use cardano/address.{Script}
 use cardano/assets.{AssetName, PolicyId, flatten, flatten_with}
@@ -11,8 +9,8 @@ use utils/functions.{
   get_collateral_value, get_transaction_details, try_extract_nft_position,
 }
 use utils/types.{
-  CIP68Metadata, OutputIndexes, TransactionDetails, nft_prefix, reference_prefix,
-  user_nft_prefix,
+  CollateralDetails, OutputIndexes, TransactionDetails, nft_prefix,
+  reference_prefix, user_nft_prefix,
 } as util_types
 
 pub fn claim(input_index: Int, output_indexes: OutputIndexes, tx: Transaction) {
@@ -24,38 +22,27 @@ pub fn claim(input_index: Int, output_indexes: OutputIndexes, tx: Transaction) {
       tx,
     )
 
-  let TransactionDetails { self_input, return_output, .. } = tx_details
+  let TransactionDetails { self_input, self_output, return_output } = tx_details
 
   expect InlineDatum(input_data) = self_input.output.datum
-  expect nft_position: CIP68Metadata = input_data
+  expect collateral_details: CollateralDetails = input_data
   expect Some(return_output) = return_output
 
   let collateral_amount =
     get_collateral_value(
-      nft_position.extra.policy_id,
-      nft_position.extra.asset_name,
+      collateral_details.policy_id,
+      collateral_details.asset_name,
       return_output.value,
     )
 
   let is_collateral_equal =
-    collateral_amount == nft_position.extra.collateral_amount
-
-  let datum_tag =
-    self_input.output_reference
-      |> cbor.serialise()
-      |> crypto.blake2b_256()
-
-  expect InlineDatum(return_datum) = return_output.datum
-  expect return_datum: Hash<Blake2b_256, OutputReference> = return_datum
-  let is_datum_tag_correct = return_datum == datum_tag
-
-  expect Script(validator_hash) = self_input.output.address.payment_credential
+    collateral_amount == collateral_details.collateral_amount
+  expect Script(validator_hash) = self_output.address.payment_credential
   let is_mint_valid = burn_token(validator_hash, tx_details, tx)
 
   and {
     is_mint_valid?,
     is_collateral_equal?,
-    is_datum_tag_correct?,
   }
 }
 
