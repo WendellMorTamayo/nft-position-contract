@@ -111,26 +111,21 @@ pub fn mint_token(
 
   let tx_hash = self_input.output_reference.transaction_id
   let index = self_input.output_reference.output_index
-  let reference_token_name: AssetName =
-    unique_token_name(tx_hash, index, reference_prefix)
-  let user_token_name: AssetName =
+  let new_user_token_name: AssetName =
     unique_token_name(tx_hash, index, user_nft_prefix)
 
-  // check if reference and user tokens are part of the mint of this transaction
-  let mint = tx.mint |> flatten()
-  let is_token_mint_valid = and {
-      mint
-        |> list.any(
-            fn(y) { exact_value(y, validator_hash, reference_token_name, 1)? },
-          ),
-      mint
-        |> list.any(
-            fn(y) { exact_value(y, validator_hash, user_token_name, 1)? },
-          ),
-    }
+  // Check if the new user NFT is minted in this transaction
+  let mint = tx.mint |> assets.flatten()
+  let is_new_token_minted =
+    mint
+      |> list.any(
+          fn(mint_entry) {
+            exact_value(mint_entry, validator_hash, new_user_token_name, 1)?
+          },
+        )
   and {
     is_nft_position_valid?,
-    is_token_mint_valid?,
+    is_new_token_minted?,
   }
 }
 

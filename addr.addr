@@ -1,0 +1,3 @@
+  [31m×[0m I couldn't find any 'aiken.toml' manifest in plutus.json.
+[36m  help: [0mTry running `aiken new <REPOSITORY/PROJECT>` to initialise a project with an example manifest.
+

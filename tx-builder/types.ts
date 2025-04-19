@@ -17,6 +17,7 @@ const WithdrawActionSchema = Data.Enum([
     Data.Object({ CancelAction: Data.Object([]) }),
     Data.Object({ MintAction: Data.Object([]) }),
     Data.Object({ BurnAction: Data.Object([]) }),
+    Data.Object({ AlwaysTrueAction: Data.Object([]) }),
 ]);
 type WithdrawAction = Static<typeof WithdrawActionSchema>;
 export const WithdrawAction = WithdrawActionSchema as unknown as WithdrawAction;
@@ -72,3 +73,4 @@ export const OrderRedeemerSchema = Data.Enum([
 
 export type OrderRedeemer = Static<typeof OrderRedeemerSchema>;
 export const OrderRedeemer = OrderRedeemerSchema as unknown as OrderRedeemer;
+

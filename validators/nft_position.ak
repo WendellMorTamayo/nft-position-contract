@@ -7,7 +7,7 @@ use nft_position/functions.{burn_asset,
   cancel, claim, lock_asset} as nft_position_functions
 use utils/functions.{get_validator_hash}
 use utils/types.{
-  Action, BurnAction, CancelAction, ClaimAction, MintAction, WithdrawRedeemer,
+  Action, AlwaysTrueAction, BurnAction, CancelAction, ClaimAction, MintAction, WithdrawRedeemer,
 }
 
 validator nft_position {
@@ -31,6 +31,7 @@ validator nft_position {
               CancelAction -> cancel(input_index, output_indexes, self)
               MintAction -> lock_asset(input_index, output_indexes, self)
               BurnAction -> burn_asset(input_index, output_indexes, self)
+              AlwaysTrueAction -> True
             }
           },
         )

@@ -1,8 +1,9 @@
 use aiken/primitive/bytearray
 use cardano/address.{Address, Script, VerificationKey}
-use cardano/assets.{add, from_asset, from_lovelace, zero}
+use cardano/assets.{AssetName, add, from_asset, from_lovelace, zero}
 use cardano/transaction.{
-  InlineDatum, Input, NoDatum, Output, OutputReference, Transaction, placeholder,
+  InlineDatum, Input, NoDatum, Output, OutputReference, Transaction,
+  TransactionId, placeholder,
 }
 use nft_position/functions.{cancel, claim, mint_token, unique_token_name}
 use utils/functions.{get_transaction_details} as util_functions
@@ -223,8 +224,8 @@ test mint_test() {
   let input1 =
     Input {
       output_reference: OutputReference {
-        transaction_id: #"27cac73f6583edd7e950c02767fdee179b9c980bcb116b4869451944644337ed",
-        output_index: 0,
+        transaction_id: #"3fce0f4728689f75a76d15695316cf70ffb51270aaef2540c3e9d48a75d11633",
+        output_index: 4,
       },
       output: Output(
         Address {
@@ -317,16 +318,62 @@ test mint_test() {
           }
         }
 
-  trace unique_token_name(
-    input1.output_reference.transaction_id,
-    input1.output_reference.output_index,
-    reference_prefix,
-  )
-  trace unique_token_name(
-    input1.output_reference.transaction_id,
-    input1.output_reference.output_index,
-    user_nft_prefix,
-  )
+  let user_token_name1: AssetName =
+    generate_cip68_token_name_with_suffix(
+      input1.output_reference.transaction_id,
+      input1.output_reference.output_index,
+      user_nft_prefix,
+      #"01",
+    )
+  let user_token_name2: AssetName =
+    generate_cip68_token_name_with_suffix(
+      input1.output_reference.transaction_id,
+      input1.output_reference.output_index,
+      user_nft_prefix,
+      #"02",
+    )
+
+  let reference_token_name: AssetName =
+    generate_cip68_token_name(
+      input1.output_reference.transaction_id,
+      input1.output_reference.output_index,
+      reference_prefix,
+    )
+  trace user_token_name1
+  trace user_token_name2
+  trace reference_token_name
   let tx_details = get_transaction_details(0, 0, Some(1), tx)
   mint_token(validator_hash, tx_details, tx)?
 }
+
+pub fn generate_cip68_token_name_with_suffix(
+  txid: TransactionId,
+  idx: Int,
+  label_prefix: ByteArray,
+  suffix: ByteArray,
+) -> AssetName {
+  // Combine transaction ID and index
+  let unique_id: ByteArray = bytearray.push(txid, idx)
+  // Add suffix for further uniqueness
+  let unique_id_with_suffix = unique_id |> bytearray.concat(suffix)
+  // Prepend the label prefix
+  let token_name: ByteArray =
+    label_prefix |> bytearray.concat(unique_id_with_suffix)
+  // Ensure it fits within the 32-byte limit
+  token_name |> bytearray.take(32)
+}
+
+pub fn generate_cip68_token_name(
+  txid: TransactionId,
+  idx: Int,
+  label_prefix: ByteArray,
+) -> AssetName {
+  // Combine transaction ID and index for uniqueness
+  let unique_id: ByteArray = bytearray.push(txid, idx)
+  // Prepend the label prefix (222 for reference, 444 for user tokens)
+  let token_name: ByteArray = label_prefix |> bytearray.concat(unique_id)
+  // Ensure it fits within the 32-byte limit for asset names
+  token_name |> bytearray.take(32)
+}
+
+test mint_metadata
